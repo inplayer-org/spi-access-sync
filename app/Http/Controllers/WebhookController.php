@@ -29,6 +29,11 @@ class WebhookController extends Controller {
         return response('Failure', 422);
     }
 
+    public function show( $id, $email )
+    {
+        $this->sync($this->getData($id, $email));
+    }
+
     private function sync( $data )
     {
         $uri = env('SYNC_URL');

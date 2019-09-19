@@ -22,3 +22,5 @@ $router->post('/webhook', ['middleware' => 'verify_access', 'uses' => 'WebhookCo
 $router->get('/test', function(Request $request) {
     return $request->all();
 });
+
+$router->get('/access/{id}/{email}', 'WebhookController@show');
