@@ -4,7 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Response extends Model
+class PaymentLog extends Model
 {
 
     /**
@@ -13,7 +13,7 @@ class Response extends Model
      * @var array
      */
     protected $fillable = [
-        'payload', 'type'
+        'payment_id', 'email'
     ];
 
 }

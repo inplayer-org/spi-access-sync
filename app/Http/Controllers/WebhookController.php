@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 
+use App\PaymentLog;
 use App\Response;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller {
 
@@ -18,9 +20,9 @@ class WebhookController extends Controller {
 
             $this->saveWebhookData($id, $email, $status, $request->all());
 
-            if(app()->environment() !== 'testing')
+            if (app()->environment() !== 'testing')
             {
-                $this->sync($this->getData($id, $email));
+                $this->grantAccess($id, $email);
             }
 
             return response('Ok', 200);
@@ -29,33 +31,83 @@ class WebhookController extends Controller {
         return response('Failure', 422);
     }
 
+    // used for testing the GRANT ACCESS ENDPOINT
     public function show( $id, $email )
     {
-        $this->sync($this->getData($id, $email));
+        $this->grantAccess($id, $email);
+
+        return 'Ok';
     }
 
-    private function sync( $data )
+    private function grantAccess( $id, $email )
     {
-        $uri = env('SYNC_URL');
+        $this->revokeAccess($email);
 
-        $params = [
-            'data' => $data,
-            'sig'  => base64_encode(hash_hmac('sha1', $data, env('GRANT_ACCESS'), TRUE)),
-            'key'  => env('PUBLIC_KEY')
-        ];
+        $data = $this->getData($id, $email);
 
-        $uri .= '?' . http_build_query($params);
+        $uri = env('GRANT_ACCESS_URL') . '?' . http_build_query($this->getParams($data));
 
         $client = new Client();
         $res = $client->request('GET', $uri);
         $contents = (string) $res->getBody();
 
-        $this->saveResponse($contents);
+        $this->logAPayment($this->getPaymentId($contents), $email);
+        $this->saveResponse('grant_access', $contents);
     }
 
-    private function saveResponse( $payload )
+    private function revokeAccess( $email )
     {
-        Response::create(compact('payload'));
+        $paymentId = optional(PaymentLog::where('email', $email)->latest()->first())->payment_id;
+
+        if ( ! $paymentId)
+        {
+            Log::info('No payment registered for this user yet.');
+
+            return;
+        }
+
+        $data = json_encode([
+            'payment_id'   => $paymentId,
+            'payment_type' => 'package',
+            'client_email' => $email
+        ]);
+
+        $uri = env('REVOKE_ACCESS_URL') . '?' . http_build_query($this->getParams($data));
+
+        $client = new Client();
+        $res = $client->request('GET', $uri);
+        $contents = (string) $res->getBody();
+
+        $this->saveResponse('revoke_access', $contents);
+    }
+
+    private function getParams( $data )
+    {
+        return [
+            'data' => $data,
+            'sig'  => base64_encode(hash_hmac('sha1', $data, env('GRANT_ACCESS'), TRUE)),
+            'key'  => env('PUBLIC_KEY')
+        ];
+    }
+
+    private function saveResponse( $type, $payload )
+    {
+        Response::create([
+            'type'    => $type,
+            'payload' => $payload
+        ]);
+    }
+
+    private function getPaymentId( $payload )
+    {
+        $result = json_decode($payload, true);
+
+        if (isset($result['response']['status']) && $result['response']['status'] === 'success')
+        {
+            return $result['response']['result']['payment_id'];
+        }
+
+        return null;
     }
 
     private function getData( $id, $email )
@@ -86,6 +138,22 @@ class WebhookController extends Controller {
             'email'       => $email,
             'status'      => $status,
             'payload'     => serialize($payload)
+        ]);
+    }
+
+    private function logAPayment( $paymentId, $email )
+    {
+        if ( ! $paymentId)
+        {
+            Log::error('No payment ID found.');
+            $this->saveResponse('revoke_access', 'No payment ID in the reponse.');
+
+            return;
+        }
+
+        PaymentLog::create([
+            'payment_id' => $paymentId,
+            'email'      => $email
         ]);
     }
 }
