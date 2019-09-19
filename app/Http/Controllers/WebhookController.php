@@ -35,7 +35,7 @@ class WebhookController extends Controller {
 
         $params = [
             'data' => $data,
-            'sig'  => base64_encode(hash_hmac('sha1', $data, env('SECRET_KEY'), TRUE)),
+            'sig'  => base64_encode(hash_hmac('sha1', $data, env('GRANT_ACCESS'), TRUE)),
             'key'  => env('PUBLIC_KEY')
         ];
 
