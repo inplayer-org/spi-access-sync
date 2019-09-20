@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Support\Facades\Log;
 
 class InPlayerVerificationMiddleware {
 
@@ -15,6 +16,8 @@ class InPlayerVerificationMiddleware {
      */
     public function handle( $request, Closure $next )
     {
+        Log::info('Request received: ' . $request->getContent());
+
         if ($request->headers->has('X_INPLAYER_SIGNATURE'))
         {
             $token = $request->header('X_INPLAYER_SIGNATURE');
