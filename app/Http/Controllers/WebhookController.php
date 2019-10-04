@@ -13,10 +13,10 @@ class WebhookController extends Controller {
 
     public function store( Request $request )
     {
-        if ($this->isSuccess($status = $request->get('type')))
+        if ($this->isSuccess($status = $request->input('type')))
         {
-            $id = $request->get('resource[description]');
-            $email = $request->get('resource[email]');
+            $id = $request->input('resource.description');
+            $email = $request->input('resource.email');
 
             $this->saveWebhookData($id, $email, $status, $request->all());
 

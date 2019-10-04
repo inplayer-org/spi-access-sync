@@ -16,4 +16,14 @@ class Request extends Model
         'platform_id', 'item_id', 'email', 'status', 'payload'
     ];
 
+    public function getRouteKeyName()
+    {
+        return 'payload';
+    }
+
+    public function getRouteKey()
+    {
+        return 'payload';
+    }
+
 }
