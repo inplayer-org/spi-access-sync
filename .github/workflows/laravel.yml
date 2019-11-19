@@ -1,0 +1,30 @@
+name: Laravel
+
+on: [push]
+
+jobs:
+  laravel-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+    - name: Build image
+      run: docker build -t inplayer/spi-access-sync .
+    - name: Login to ECR
+      id: ecr
+      uses: elgohr/ecr-login-action@master
+      with:
+        access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        region: eu-central-1 
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: spi-access-sync 
+        username: ${{ steps.ecr.outputs.username }}
+        password: ${{ steps.ecr.outputs.password }}
+        registry: ${{ steps.ecr.outputs.registry }}
+        snapshot: true
