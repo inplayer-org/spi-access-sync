@@ -14,12 +14,17 @@ jobs:
     - name: Build image
       run: docker build -t inplayer/spi-access-sync .
     - name: Login to ECR
-      uses: jwalton/gh-ecr-login@v1.0.0
+      id: ecr
+      uses: elgohr/ecr-login-action@master
       with:
-        access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        region: eu-central-1
-    - name: Push to ECR
-      run: |
-          docker tag inplayer/spi-access-sync ${{ steps.ecr.outputs.account }}.dkr.ecr.eu-central-1.amazonaws.com/spi-access-sync:build-${{ github.sha }}
-          docker push ${{ steps.ecr.outputs.account }}.dkr.ecr.eu-central-1.amazonaws.com/spi-access-sync:build-${{ github.sha }} 
+        access_key: ${{ secrets.AWS_ACCESS_KEY }}
+        secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        region: eu-central-1 
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: spi-access-sync 
+        username: ${{ steps.ecr.outputs.username }}
+        password: ${{ steps.ecr.outputs.password }}
+        registry: ${{ steps.ecr.outputs.registry }}
+        snapshot: true
