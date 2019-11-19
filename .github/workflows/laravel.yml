@@ -13,3 +13,12 @@ jobs:
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
     - name: Build image
       run: docker build -t inplayer/spi-access-sync .
+    - name: Push to ECR
+      id: ecr
+      uses: jwalton/gh-ecr-push@v1
+      with:
+        access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        region: eu-central-1 
+        local-image: inplayer/spi-access-sync  
+        image: spi-access-sync:build-${{ github.sha }}
