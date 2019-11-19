@@ -39,6 +39,13 @@ class WebhookController extends Controller {
         return 'Ok';
     }
 
+    /**
+     * Prepare the request and grant access on the new platform.
+     *
+     * @param $id
+     * @param $email
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     private function grantAccess( $id, $email )
     {
         $this->revokeAccess($email);
@@ -55,6 +62,12 @@ class WebhookController extends Controller {
         $this->saveResponse('grant_access', $contents);
     }
 
+    /**
+     * Revoke access for the same payment ID before we grant a new one.
+     *
+     * @param $email
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     private function revokeAccess( $email )
     {
         $paymentId = optional(PaymentLog::where('email', $email)->latest()->first())->payment_id;
@@ -125,11 +138,25 @@ class WebhookController extends Controller {
         ]);
     }
 
+    /**
+     * Does the received data has a status of success.
+     *
+     * @param $type
+     * @return bool
+     */
     private function isSuccess( $type )
     {
         return $type === 'subscribe.success';
     }
 
+    /**
+     * Save the webhook request data to the database.
+     *
+     * @param $id
+     * @param $email
+     * @param $status
+     * @param $payload
+     */
     private function saveWebhookData( $id, $email, $status, $payload )
     {
         \App\Request::create([
@@ -141,6 +168,12 @@ class WebhookController extends Controller {
         ]);
     }
 
+    /**
+     * Log the payment to the database.
+     *
+     * @param $paymentId
+     * @param $email
+     */
     private function logAPayment( $paymentId, $email )
     {
         if ( ! $paymentId)
