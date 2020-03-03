@@ -11,17 +11,8 @@
 |
 */
 
-use App\PaymentLog;
-use Illuminate\Http\Request;
-
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
 $router->post('/webhook', ['middleware' => 'verify_access', 'uses' => 'WebhookController@store' ]);
-
-$router->get('/test', function(Request $request) {
-    return $request->all();
-});
-
-$router->get('/access/{id}/{email]}', 'WebhookController@show');

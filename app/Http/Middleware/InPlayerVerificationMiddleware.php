@@ -33,8 +33,10 @@ class InPlayerVerificationMiddleware {
 
     private function verifySignature( $content, $signature )
     {
-        $localSignature = 'sha256=' . hash_hmac('sha256', $content, env('SECRET_KEY'));
+        $id = $content['resource']['description'] ?? null;
+        $secretKey = config("inplayer.$id.secret_key", config('inplayer.secret_key'));
 
+        $localSignature = 'sha256=' . hash_hmac('sha256', $content, $secretKey);
         return hash_equals($signature, $localSignature);
     }
 }

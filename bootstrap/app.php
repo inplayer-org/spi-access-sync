@@ -25,6 +25,8 @@ $app->withFacades();
 
 $app->withEloquent();
 
+$app->configure('inplayer');
+
 /*
 |--------------------------------------------------------------------------
 | Register Container Bindings

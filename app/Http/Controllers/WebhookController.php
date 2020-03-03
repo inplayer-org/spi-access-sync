@@ -31,14 +31,6 @@ class WebhookController extends Controller {
         return response('Failure', 422);
     }
 
-    // used for testing the GRANT ACCESS ENDPOINT
-    public function show( $id, $email )
-    {
-        $this->grantAccess($id, $email);
-
-        return 'Ok';
-    }
-
     /**
      * Prepare the request and grant access on the new platform.
      *
@@ -48,11 +40,11 @@ class WebhookController extends Controller {
      */
     private function grantAccess( $id, $email )
     {
-        $this->revokeAccess($email);
+        $this->revokeAccess($id, $email);
 
         $data = $this->getData($id, $email);
 
-        $uri = env('GRANT_ACCESS_URL') . '?' . http_build_query($this->getParams($data));
+        $uri = config('inplayer.grant_url') . '?' . http_build_query($this->getParams($data));
 
         $client = new Client();
         $res = $client->request('GET', $uri);
@@ -65,10 +57,11 @@ class WebhookController extends Controller {
     /**
      * Revoke access for the same payment ID before we grant a new one.
      *
+     * @param $id
      * @param $email
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    private function revokeAccess( $email )
+    private function revokeAccess( $id, $email )
     {
         $paymentId = optional(PaymentLog::where('email', $email)->latest()->first())->payment_id;
 
@@ -85,7 +78,7 @@ class WebhookController extends Controller {
             'client_email' => $email
         ]);
 
-        $uri = env('REVOKE_ACCESS_URL') . '?' . http_build_query($this->getParams($data));
+        $uri = config('inplayer.revoke_url') . '?' . http_build_query($this->getParams($id, $data));
 
         $client = new Client();
         $res = $client->request('GET', $uri);
@@ -94,12 +87,12 @@ class WebhookController extends Controller {
         $this->saveResponse('revoke_access', $contents);
     }
 
-    private function getParams( $data )
+    private function getParams( $id, $data )
     {
         return [
             'data' => $data,
-            'sig'  => base64_encode(hash_hmac('sha1', $data, env('GRANT_ACCESS'), TRUE)),
-            'key'  => env('PUBLIC_KEY')
+            'sig'  => base64_encode(hash_hmac('sha1', $data, config('inplayer.grant_access_key'), TRUE)),
+            'key'  => config("inplayer.$id.public_key", config('inplayer.public_key'))
         ];
     }
 
