@@ -91,7 +91,8 @@ class WebhookController extends Controller {
     {
         return [
             'data' => $data,
-            'sig'  => base64_encode(hash_hmac('sha1', $data, config('inplayer.grant_access_key'), TRUE)),
+            'sig'  => base64_encode(hash_hmac('sha1',
+                $data, config("inplayer.$id.grant_access_key", config('inplayer.grant_access_key')), TRUE)),
             'key'  => config("inplayer.$id.public_key", config('inplayer.public_key'))
         ];
     }
