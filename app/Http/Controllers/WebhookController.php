@@ -44,7 +44,7 @@ class WebhookController extends Controller {
 
         $data = $this->getData($id, $email);
 
-        $uri = config('inplayer.grant_url') . '?' . http_build_query($this->getParams($data));
+        $uri = config('inplayer.grant_url') . '?' . http_build_query($this->getParams($id, $data));
 
         $client = new Client();
         $res = $client->request('GET', $uri);
